@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>E-Tech Solutions · Mesa de Ayuda AI</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    /* ============================================================
+       VARIABLES Y RESET
+       Aquí definimos la paleta de colores y fuentes del sistema.
+       El "ADN visual" de E-Tech: oscuro, cristal, neón ámbar.
+    ============================================================ */
+    :root {
+      --bg-deep:       #080c10;
+      --bg-mid:        #0d1117;
+      --glass-fill:    rgba(255,255,255,0.045);
+      --glass-border:  rgba(255,255,255,0.10);
+      --glass-shadow:  0 8px 40px rgba(0,0,0,0.6);
+      --accent:        #ffb300;       /* ámbar neón del teclado */
+      --accent-glow:   rgba(255,179,0,0.18);
+      --accent-soft:   rgba(255,179,0,0.55);
+      --text-primary:  #e8eaf0;
+      --text-muted:    #6b7280;
+      --text-dim:      #374151;
+      --user-bubble:   rgba(255,179,0,0.12);
+      --ai-bubble:     rgba(255,255,255,0.04);
+      --font-display:  'DM Serif Display', serif;
+      --font-mono:     'DM Mono', monospace;
+      --radius:        16px;
+      --radius-sm:     10px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: var(--font-mono);
+      background: var(--bg-deep);
+      color: var(--text-primary);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ============================================================
+       FONDO AMBIENTAL
+       Círculos de luz difusa que simulan profundidad (Glassmorphism).
+    ============================================================ */
+    .ambient {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    }
+    .ambient::before {
+      content: '';
+      position: absolute;
+      width: 600px; height: 600px;
+      top: -150px; left: -100px;
+      background: radial-gradient(circle, rgba(255,179,0,0.07) 0%, transparent 70%);
+      border-radius: 50%;
+      animation: drift 14s ease-in-out infinite alternate;
+    }
+    .ambient::after {
+      content: '';
+      position: absolute;
+      width: 500px; height: 500px;
+      bottom: -100px; right: -80px;
+      background: radial-gradient(circle, rgba(59,130,246,0.06) 0%, transparent 70%);
+      border-radius: 50%;
+      animation: drift 18s ease-in-out infinite alternate-reverse;
+    }
+    @keyframes drift {
+      from { transform: translate(0,0) scale(1); }
+      to   { transform: translate(40px, 30px) scale(1.08); }
+    }
+
+    /* ============================================================
+       LAYOUT PRINCIPAL
+    ============================================================ */
+    .app-wrapper {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 780px;
+      padding: 32px 16px 24px;
+      display: flex; flex-direction: column;
+      min-height: 100vh;
+      gap: 20px;
+    }
+
+    /* ============================================================
+       HEADER
+    ============================================================ */
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 24px;
+      background: var(--glass-fill);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius);
+      backdrop-filter: blur(24px);
+      box-shadow: var(--glass-shadow);
+    }
+    .header-brand { display: flex; align-items: center; gap: 14px; }
+    .logo-mark {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, var(--accent), #ff6f00);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+    .brand-text h1 {
+      font-family: var(--font-display);
+      font-size: 1.1rem; font-weight: 400;
+      color: var(--text-primary);
+      letter-spacing: 0.01em;
+    }
+    .brand-text p {
+      font-size: 0.65rem; color: var(--text-muted);
+      letter-spacing: 0.12em; text-transform: uppercase;
+      margin-top: 1px;
+    }
+    .status-badge {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.62rem; color: var(--text-muted);
+      letter-spacing: 0.1em; text-transform: uppercase;
+    }
+    .status-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 8px #22c55e;
+      animation: pulse-dot 2s ease infinite;
+    }
+    @keyframes pulse-dot {
+      0%,100% { opacity:1; } 50% { opacity:.4; }
+    }
+
+    /* ============================================================
+       PANEL DE CONFIGURACIÓN (API KEY)
+       Torre 0: Antes de chatear, el usuario ingresa su API Key.
+       Esto mapea a "Fase 1 - Paso 1: Definición del Core".
+    ============================================================ */
+    .config-panel {
+      background: var(--glass-fill);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius);
+      backdrop-filter: blur(20px);
+      padding: 20px 24px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .config-panel label {
+      font-size: 0.65rem; color: var(--accent);
+      letter-spacing: 0.1em; text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .config-panel input {
+      flex: 1;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      padding: 9px 14px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .config-panel input:focus { border-color: var(--accent-soft); }
+    .config-panel input::placeholder { color: var(--text-dim); }
+    .btn-save {
+      background: linear-gradient(135deg, var(--accent), #ff8f00);
+      color: #000;
+      border: none; cursor: pointer;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-mono);
+      font-size: 0.7rem; font-weight: 500;
+      padding: 9px 18px;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+      transition: opacity .2s, box-shadow .2s;
+    }
+    .btn-save:hover { opacity:.88; box-shadow: 0 0 16px var(--accent-glow); }
+
+    /* ============================================================
+       VENTANA DE CHAT
+    ============================================================ */
+    .chat-window {
+      flex: 1;
+      background: var(--glass-fill);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius);
+      backdrop-filter: blur(24px);
+      box-shadow: var(--glass-shadow);
+      display: flex; flex-direction: column;
+      overflow: hidden;
+      min-height: 420px;
+    }
+    .chat-topbar {
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--glass-border);
+      font-size: 0.62rem; color: var(--text-muted);
+      letter-spacing: 0.1em; text-transform: uppercase;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .chat-topbar span { color: var(--accent); }
+
+    /* ---- Mensajes ---- */
+    .messages {
+      flex: 1; overflow-y: auto;
+      padding: 24px 20px;
+      display: flex; flex-direction: column; gap: 16px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--glass-border) transparent;
+    }
+    .msg {
+      display: flex; gap: 12px;
+      animation: msgIn .3s ease;
+    }
+    @keyframes msgIn {
+      from { opacity:0; transform: translateY(8px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+    .msg.user { flex-direction: row-reverse; }
+    .avatar {
+      width: 32px; height: 32px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; flex-shrink: 0;
+    }
+    .msg.ai .avatar {
+      background: linear-gradient(135deg, var(--accent), #ff6f00);
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+    .msg.user .avatar {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid var(--glass-border);
+    }
+    .bubble {
+      max-width: 78%;
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      line-height: 1.65;
+      white-space: pre-wrap;
+    }
+    .msg.ai   .bubble { background: var(--ai-bubble);   border: 1px solid var(--glass-border); }
+    .msg.user .bubble { background: var(--user-bubble); border: 1px solid rgba(255,179,0,0.2); }
+
+    /* ---- Typing indicator ---- */
+    .typing-indicator { display: none; }
+    .typing-indicator.visible { display: flex; }
+    .typing-dots { display: flex; gap: 5px; padding: 4px 0; }
+    .typing-dots span {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent);
+      animation: bounce .9s ease infinite;
+    }
+    .typing-dots span:nth-child(2) { animation-delay:.15s; }
+    .typing-dots span:nth-child(3) { animation-delay:.30s; }
+    @keyframes bounce {
+      0%,100% { transform: translateY(0); opacity:.4; }
+      50%      { transform: translateY(-5px); opacity:1; }
+    }
+
+    /* ---- Input area ---- */
+    .input-area {
+      padding: 16px 20px;
+      border-top: 1px solid var(--glass-border);
+      display: flex; gap: 10px; align-items: flex-end;
+    }
+    #user-input {
+      flex: 1;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      padding: 11px 16px;
+      resize: none; outline: none;
+      line-height: 1.5;
+      transition: border-color .2s;
+      max-height: 120px;
+    }
+    #user-input:focus { border-color: var(--accent-soft); }
+    #user-input::placeholder { color: var(--text-dim); }
+    .btn-send {
+      width: 42px; height: 42px;
+      background: linear-gradient(135deg, var(--accent), #ff8f00);
+      border: none; border-radius: var(--radius-sm);
+      cursor: pointer; color: #000; font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: opacity .2s, box-shadow .2s;
+      box-shadow: 0 0 0 var(--accent-glow);
+    }
+    .btn-send:hover { opacity:.88; box-shadow: 0 0 18px var(--accent-glow); }
+    .btn-send:disabled { opacity:.3; cursor:not-allowed; }
+
+    /* ============================================================
+       FOOTER DE FASES (muestra en qué fase estamos)
+    ============================================================ */
+    .phase-footer {
+      display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
+    }
+    .phase-tag {
+      font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 5px 12px;
+      border-radius: 20px;
+      border: 1px solid var(--glass-border);
+      color: var(--text-muted);
+    }
+    .phase-tag.active {
+      border-color: var(--accent-soft);
+      color: var(--accent);
+      background: var(--accent-glow);
+    }
+  </style>
+</head>
+<body>
+
+<div class="ambient"></div>
+
+<div class="app-wrapper">
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-brand">
+      <div class="logo-mark">⚡</div>
+      <div class="brand-text">
+        <h1>E-Tech Solutions</h1>
+        <p>Mesa de Ayuda · Asistente de Ingeniería</p>
+      </div>
+    </div>
+    <div class="status-badge">
+      <div class="status-dot"></div>
+      <span>V1 · Fase 1</span>
+    </div>
+  </header>
+
+  <!-- CONFIGURACIÓN: API KEY
+       ─────────────────────────────────────────────────────────────
+       DOCUMENTACIÓN — Paso 1 del Roadmap: "Definición del Core"
+       El usuario pega aquí su OpenAI API Key. Se guarda solo en
+       memoria (variable JS). Nunca se envía a ningún servidor
+       propio; va directo a api.openai.com en cada petición.
+       ─────────────────────────────────────────────────────────────
+  -->
+  <div class="config-panel">
+    <label>🔑 API Key</label>
+    <input type="password" id="api-key-input" placeholder="sk-proj-..." />
+    <button class="btn-save" onclick="saveApiKey()">Conectar</button>
+  </div>
+
+  <!-- VENTANA DE CHAT -->
+  <div class="chat-window">
+    <div class="chat-topbar">
+      Torre Activa: <span>PROTOCOLO DE ESCUCHA ACTIVA</span> · RAG: catalogo1.txt
+    </div>
+
+    <div class="messages" id="messages">
+      <!-- Mensaje de bienvenida inicial -->
+      <div class="msg ai">
+        <div class="avatar">⚡</div>
+        <div class="bubble">Bienvenido al sistema E-Tech Solutions.
+
+Soy tu Asistente de Ingeniería de Mesa de Ayuda. Puedo ayudarte con:
+
+• Consultas sobre productos (MacBook Pro, Monitor 8K, Teclado Silent Vector)
+• Precios, disponibilidad y stock
+• Logística, envíos y garantías
+• Métodos de pago
+
+¿En qué puedo ayudarte hoy?</div>
+      </div>
+    </div>
+
+    <!-- Indicador de escritura (aparece mientras espera respuesta) -->
+    <div class="msg ai typing-indicator" id="typing">
+      <div class="avatar">⚡</div>
+      <div class="bubble">
+        <div class="typing-dots">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <textarea id="user-input" rows="1"
+        placeholder="Escribe tu consulta aquí…"
+        onkeydown="handleKey(event)"
+        oninput="autoResize(this)"></textarea>
+      <button class="btn-send" id="send-btn" onclick="sendMessage()">➤</button>
+    </div>
+  </div>
+
+  <!-- INDICADOR DE FASES -->
+  <div class="phase-footer">
+    <div class="phase-tag active">✓ Fase 1 · RAG + Core (activa)</div>
+    <div class="phase-tag">○ Fase 2 · Voz + PQRS (pendiente)</div>
+    <div class="phase-tag">○ Fase 3 · UI Premium + DB (pendiente)</div>
+  </div>
+
+</div>
+
+<script>
+  /* ============================================================
+     MÓDULO 1: ESTADO DE LA APLICACIÓN
+     Variables globales que mantienen el estado durante la sesión.
+  ============================================================ */
+  let apiKey = '';             // OpenAI API Key del usuario
+  let conversationHistory = []; // Historial de mensajes (multi-turno)
+  let SYSTEM_PROMPT = '';       // Se construye después de cargar el catálogo
+
+  /* ============================================================
+     MÓDULO 2: CARGA EXTERNA DEL CATÁLOGO (RAG — Retrieval)
+     ─────────────────────────────────────────────────────────────
+     El catálogo vive en catalogo1.txt — un archivo separado.
+     El motor (index.html) NO sabe nada del negocio.
+     El conocimiento (catalogo1.txt) es intercambiable.
+
+     Se carga con fetch() al iniciar la app. GitHub Pages sirve
+     ambos archivos desde el mismo origen → sin problemas CORS.
+
+     En producción esto sería embeddings vectoriales + búsqueda
+     semántica. Para el MVP (Fase 1): fetch + inject. Funciona.
+     ─────────────────────────────────────────────────────────────
+  */
+  async function loadKnowledgeBase() {
+    try {
+      const response = await fetch('./catalogo1.txt');
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const KNOWLEDGE_BASE = await response.text();
+
+      /* ========================================================
+         MÓDULO 3: SYSTEM PROMPT (Protocolo de Escucha Activa)
+         ─────────────────────────────────────────────────────────
+         Se construye DESPUÉS de cargar el catálogo.
+         Le decimos al modelo QUIÉN es, QUÉ puede hacer, y le
+         damos la base de conocimiento como contexto.
+         La instrucción clave: "responde SOLO con info del catálogo"
+         ─────────────────────────────────────────────────────────
+      */
+      SYSTEM_PROMPT = `Eres el Asistente de Ingeniería de Mesa de Ayuda de E-Tech Solutions.
+Operas bajo la Metodología de Torres (V1 - Solo Texto).
+
+REGLAS CRÍTICAS:
+1. Responde ÚNICAMENTE usando la información del catálogo proporcionado.
+2. Si la información no está en el catálogo, di exactamente: "Esa información no está disponible en mi base de conocimiento actual. Te recomiendo contactar directamente con E-Tech Solutions."
+3. Sé conciso, técnico y profesional. Tono: ingeniero experto, no vendedor.
+4. Si preguntan por voz o PQRS persistente, usa los mensajes de BLOQUEO DE FASE del catálogo.
+5. Nunca inventes precios, stock, o políticas que no estén en el catálogo.
+
+BASE DE CONOCIMIENTO:
+${KNOWLEDGE_BASE}`;
+
+      // Señal visual: catálogo cargado correctamente
+      document.querySelector('.chat-topbar span').textContent = 'PROTOCOLO DE ESCUCHA ACTIVA';
+      console.log('✓ catalogo1.txt cargado —', KNOWLEDGE_BASE.length, 'caracteres');
+
+    } catch (error) {
+      // Si falla la carga, mostrar error en el chat
+      addMessage('ai', `⚠️ No se pudo cargar catalogo1.txt.\n\nVerifica que el archivo existe en el mismo directorio que index.html.\n\nError: ${error.message}`);
+      console.error('Error cargando catálogo:', error);
+    }
+  }
+
+  // Ejecutar carga al iniciar
+  loadKnowledgeBase();
+
+  /* ============================================================
+     MÓDULO 4: GUARDAR API KEY
+  ============================================================ */
+  function saveApiKey() {
+    const input = document.getElementById('api-key-input');
+    const val = input.value.trim();
+    if (!val.startsWith('sk-')) {
+      alert('La API Key debe comenzar con "sk-". Verifica tu clave de OpenAI.');
+      return;
+    }
+    apiKey = val;
+    input.value = '••••••••••••••••••••';
+    input.disabled = true;
+    document.querySelector('.btn-save').textContent = '✓ Conectado';
+    document.querySelector('.btn-save').disabled = true;
+    addMessage('ai', '✓ API Key configurada. El Motor de Inferencia está activo. Puedes hacer tu primera consulta.');
+  }
+
+  /* ============================================================
+     MÓDULO 5: ENVIAR MENSAJE
+     ─────────────────────────────────────────────────────────────
+     Aquí ocurre el flujo RAG completo:
+     1. Tomar el texto del usuario
+     2. Agregarlo al historial de conversación
+     3. Enviar historial + system prompt a OpenAI
+     4. Mostrar la respuesta
+     ─────────────────────────────────────────────────────────────
+  */
+  async function sendMessage() {
+    const input = document.getElementById('user-input');
+    const text = input.value.trim();
+    if (!text) return;
+    if (!apiKey) {
+      alert('Primero ingresa tu API Key de OpenAI y presiona "Conectar".');
+      return;
+    }
+
+    // Limpiar input y deshabilitar botón
+    input.value = '';
+    autoResize(input);
+    document.getElementById('send-btn').disabled = true;
+
+    // Mostrar mensaje del usuario
+    addMessage('user', text);
+
+    // Agregar al historial
+    conversationHistory.push({ role: 'user', content: text });
+
+    // Mostrar indicador de escritura
+    showTyping(true);
+
+    try {
+      /* ──────────────────────────────────────────────────────
+         LLAMADA A LA API DE OPENAI
+         Endpoint: /v1/chat/completions
+         Modelo: gpt-4o-mini (eficiente y económico para MVP)
+         Se envía: system prompt + historial completo
+      ────────────────────────────────────────────────────── */
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          max_tokens: 600,
+          temperature: 0.3,   // baja temperatura = respuestas más precisas/consistentes
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            ...conversationHistory
+          ]
+        })
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error?.message || `HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      const aiReply = data.choices[0].message.content;
+
+      // Agregar respuesta al historial
+      conversationHistory.push({ role: 'assistant', content: aiReply });
+
+      // Mostrar respuesta
+      showTyping(false);
+      addMessage('ai', aiReply);
+
+    } catch (error) {
+      showTyping(false);
+      addMessage('ai', `⚠️ Error de conexión: ${error.message}\n\nVerifica tu API Key o tu conexión a internet.`);
+    }
+
+    document.getElementById('send-btn').disabled = false;
+    input.focus();
+  }
+
+  /* ============================================================
+     MÓDULO 6: FUNCIONES DE UI
+  ============================================================ */
+
+  // Agregar un mensaje al chat
+  function addMessage(role, text) {
+    const container = document.getElementById('messages');
+    const div = document.createElement('div');
+    div.className = `msg ${role}`;
+    div.innerHTML = `
+      <div class="avatar">${role === 'ai' ? '⚡' : '👤'}</div>
+      <div class="bubble">${escapeHtml(text)}</div>
+    `;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  // Mostrar/ocultar el indicador de escritura
+  function showTyping(visible) {
+    const t = document.getElementById('typing');
+    const messages = document.getElementById('messages');
+    if (visible) {
+      t.classList.add('visible');
+      messages.appendChild(t);
+      messages.scrollTop = messages.scrollHeight;
+    } else {
+      t.classList.remove('visible');
+    }
+  }
+
+  // Auto-resize del textarea
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  }
+
+  // Enter para enviar (Shift+Enter = nueva línea)
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  // Escapar HTML para evitar XSS
+  function escapeHtml(text) {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/\n/g, '<br>');
+  }
+</script>
+</body>
+</html>
