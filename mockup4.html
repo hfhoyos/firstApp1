@@ -65,20 +65,20 @@
 - Horario de soporte: Lunes a Viernes 8am-6pm.`;
 
         try {
-            const res = await fetch('catalogo.txt');
+            const res = await fetch('catalogo1.txt');
             if (res.ok) {
                 const text = await res.text();
-                console.log("✅ catalogo.txt cargado desde GitHub Pages");
+                console.log("✅ catalogo1.txt cargado desde GitHub Pages");
                 SYSTEM_PROMPT = buildSystemPrompt(text);
                 addMessage('assistant', '✅ Base de conocimiento cargada correctamente.');
                 return;
             }
         } catch (e) {
-            console.log("⚠️ No se encontró catalogo.txt, usando fallback");
+            console.log("⚠️ No se encontró catalogo1.txt, usando fallback");
         }
         
         SYSTEM_PROMPT = buildSystemPrompt(fallback);
-        addMessage('assistant', '⚠️ Usando catálogo de demostración. Sube tu archivo catalogo.txt a la raíz del repositorio.');
+        addMessage('assistant', '⚠️ Usando catálogo de demostración. Sube tu archivo catalogo1.txt a la raíz del repositorio.');
     }
 
     function buildSystemPrompt(kb) {
