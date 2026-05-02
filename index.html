@@ -744,16 +744,15 @@ ${knowledgeBase}`;
 
         // ==================== MÓDULO 5B → GUARDAR PQRS EN GOOGLE SHEETS VÍA APPS SCRIPT ====================
         // CONFIGURACIÓN: reemplaza con la URL de tu Google Apps Script desplegado
-        const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzjYfZ06G_Re2FNWbkdYydkzEBFr8Wu0uTJCJQ1UedZXohGJnNzjuXXnt6RBtpjuZHr/exec';
-
-       async function savePQRS(userMessage, aiResponse) {
-    if (GOOGLE_APPS_SCRIPT_URL.includes('https://script.google.com/macros/s/AKfycbyy5G9NyURfwN8dorSaL3mYFcUFqlPG8VBVN5_LgD8CO_mPb5zzIT74QC9tbD4eRlTT/exec')) {
-        console.log('⚠️ Google Apps Script no configurado — PQRS no se guardará');
+        const CLOUDFLARE_WORKER_URL = 'pqrs-api.hfhoyos.workers.dev';
+        async function savePQRS(userMessage, aiResponse) {
+    if (CLOUDFLARE_WORKER_URL.includes('hfhoyos')) {
+        console.log('⚠️ Cloudflare Worker no configurado — PQRS no se guardará');
         return;
     }
 
     try {
-        // Detectar tipo de PQRS automáticamente
+        // Detectar tipo de PQRS
         const tipoMap = {
             'pregunt': 'Pregunta',
             'quej': 'Queja',
@@ -770,7 +769,7 @@ ${knowledgeBase}`;
             }
         }
 
-        // Construir la URL con parámetros
+        // Construir URL con parámetros
         const params = new URLSearchParams({
             nombre: 'Usuario Anónimo',
             email: 'soporte@empresa.com',
@@ -779,18 +778,25 @@ ${knowledgeBase}`;
             respuesta: aiResponse.substring(0, 1000)
         });
 
-        // Enviar a Google Apps Script
-        const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?${params}`, {
-            method: 'GET', // GET en lugar de POST (evita CORS)
-            mode: 'no-cors'
+        // Llamar al Worker
+        const response = await fetch(`${CLOUDFLARE_WORKER_URL}?${params}`, {
+            method: 'GET'
         });
 
-        console.log('%c✅ PQRS guardada en Google Sheets', 'color:#10b981; font-weight:bold');
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            console.log('%c✅ PQRS guardada en Cloudflare D1', 'color:#10b981; font-weight:bold');
+        } else {
+            console.warn('⚠️ Error:', data.message);
+        }
 
     } catch (error) {
-        console.warn('⚠️ Error guardando PQRS:', error);
+        console.error('Error guardando PQRS:', error);
     }
 }
+        
+       
 
         // ==================== MÓDULO 6 → UI HELPERS ====================
         function addMessage(role, content) {
