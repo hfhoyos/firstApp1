@@ -744,55 +744,55 @@ ${knowledgeBase}`;
 
         // ==================== MÓDULO 5B → GUARDAR PQRS EN GOOGLE SHEETS VÍA APPS SCRIPT ====================
         // CONFIGURACIÓN: reemplaza con la URL de tu Google Apps Script desplegado
-        const GOOGLE_APPS_SCRIPT_URL = 'REEMPLAZA_CON_TU_URL_DEL_SCRIPT';
+        const CLOUDFLARE_WORKER_URL = 'https://pqrs-api.hfhoyos.workers.dev';
 
         async function savePQRS(userMessage, aiResponse) {
-            if (GOOGLE_APPS_SCRIPT_URL.includes('REEMPLAZA_CON')) {
-                console.log('⚠️ Google Apps Script no configurado — PQRS no se guardará');
-                return;
-            }
-
-            try {
-                // Detectar tipo de PQRS automáticamente
-                const tipoMap = {
-                    'pregunt': 'Pregunta',
-                    'quej': 'Queja',
-                    'reclam': 'Reclamo',
-                    'sugerenm': 'Sugerencia',
-                    'problem': 'Problema'
-                };
-                
-                let tipo = 'Consulta General';
-                for (const [palabra, tipoNombre] of Object.entries(tipoMap)) {
-                    if (userMessage.toLowerCase().includes(palabra)) {
-                        tipo = tipoNombre;
-                        break;
-                    }
-                }
-
-                // Construir URL con parámetros
-                const params = new URLSearchParams({
-                    nombre: 'Usuario Anónimo',
-                    email: 'soporte@empresa.com',
-                    tipo: tipo,
-                    consulta: userMessage.substring(0, 500),
-                    respuesta: aiResponse.substring(0, 1000)
-                });
-
-                // Enviar a Google Apps Script
-                fetch(`${GOOGLE_APPS_SCRIPT_URL}?${params}`, {
-                    method: 'GET',
-                    mode: 'no-cors'
-                }).then(() => {
-                    console.log('%c✅ PQRS guardada en Google Sheets', 'color:#10b981; font-weight:bold');
-                }).catch(error => {
-                    console.warn('⚠️ Error enviando a Sheets:', error);
-                });
-
-            } catch (error) {
-                console.error('Error guardando PQRS:', error);
+    console.log('savePQRS ejecutándose...');
+    console.log('CLOUDFLARE_WORKER_URL:', CLOUDFLARE_WORKER_URL);
+    
+    try {
+        const tipoMap = {
+            'pregunt': 'Pregunta',
+            'quej': 'Queja',
+            'reclam': 'Reclamo',
+            'sugerenm': 'Sugerencia',
+            'problem': 'Problema'
+        };
+        
+        let tipo = 'Consulta General';
+        for (const [palabra, tipoNombre] of Object.entries(tipoMap)) {
+            if (userMessage.toLowerCase().includes(palabra)) {
+                tipo = tipoNombre;
+                break;
             }
         }
+
+        const params = new URLSearchParams({
+            nombre: 'Usuario Anónimo',
+            email: 'soporte@empresa.com',
+            tipo: tipo,
+            consulta: userMessage.substring(0, 500),
+            respuesta: aiResponse.substring(0, 1000)
+        });
+
+        console.log('Llamando a:', CLOUDFLARE_WORKER_URL + '?' + params.toString().substring(0, 50));
+
+        const response = await fetch(`${CLOUDFLARE_WORKER_URL}?${params}`, {
+            method: 'GET'
+        });
+
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            console.log('%c✅ PQRS guardada en Cloudflare D1', 'color:#10b981; font-weight:bold');
+        } else {
+            console.warn('⚠️ Error:', data.message);
+        }
+
+    } catch (error) {
+        console.error('Error en savePQRS:', error);
+    }
+}
 
         // ==================== MÓDULO 6 → UI HELPERS ====================
         function addMessage(role, content) {
