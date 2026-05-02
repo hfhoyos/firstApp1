@@ -748,8 +748,8 @@ ${knowledgeBase}`;
 
         
 async function savePQRS(userMessage, aiResponse) {
-    if (!CLOUDFLARE_WORKER_URL || CLOUDFLARE_WORKER_URL.includes('REEMPLAZA')) {
-        console.log('⚠️ Cloudflare Worker no configurado');
+    console.log('savePQRS llamada con:', userMessage.substring(0, 20));
+    console.log('URL del Worker:', CLOUDFLARE_WORKER_URL);
         return;
     }
 
