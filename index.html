@@ -745,14 +745,15 @@ ${knowledgeBase}`;
         // ==================== MÓDULO 5B → GUARDAR PQRS EN GOOGLE SHEETS VÍA APPS SCRIPT ====================
         // CONFIGURACIÓN: reemplaza con la URL de tu Google Apps Script desplegado
         const CLOUDFLARE_WORKER_URL = 'pqrs-api.hfhoyos.workers.dev';
-        async function savePQRS(userMessage, aiResponse) {
-    if (CLOUDFLARE_WORKER_URL.includes('hfhoyos')) {
-        console.log('⚠️ Cloudflare Worker no configurado — PQRS no se guardará');
+
+        
+async function savePQRS(userMessage, aiResponse) {
+    if (!CLOUDFLARE_WORKER_URL || CLOUDFLARE_WORKER_URL.includes('REEMPLAZA')) {
+        console.log('⚠️ Cloudflare Worker no configurado');
         return;
     }
 
     try {
-        // Detectar tipo de PQRS
         const tipoMap = {
             'pregunt': 'Pregunta',
             'quej': 'Queja',
@@ -769,7 +770,6 @@ ${knowledgeBase}`;
             }
         }
 
-        // Construir URL con parámetros
         const params = new URLSearchParams({
             nombre: 'Usuario Anónimo',
             email: 'soporte@empresa.com',
@@ -778,7 +778,6 @@ ${knowledgeBase}`;
             respuesta: aiResponse.substring(0, 1000)
         });
 
-        // Llamar al Worker
         const response = await fetch(`${CLOUDFLARE_WORKER_URL}?${params}`, {
             method: 'GET'
         });
@@ -794,8 +793,7 @@ ${knowledgeBase}`;
     } catch (error) {
         console.error('Error guardando PQRS:', error);
     }
-}
-        
+}        
        
 
         // ==================== MÓDULO 6 → UI HELPERS ====================
